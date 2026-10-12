@@ -29,19 +29,14 @@ Each sub-folder name is treated as the class label. The script writes one
 .npy file per clip to <output_dir>/<label>/<clip_name>.npy containing an
 array of shape (T, 63) — T frames x 21 landmarks x (x, y, z).
 
-NOTE: This script is fully functional and is the pipeline the team will
-run on the actual Jester subset and the custom-recorded webcam clips.
-It has been smoke-tested on short self-recorded clips during development.
-It has NOT yet been run end-to-end on the full Jester subset or the full
-custom dataset as of this interim submission — see Section 5 (Risk/Plan)
-of the interim report.
+NOTE: Real-video validation is still pending. This implementation uses
+the legacy MediaPipe Hands API; compatibility must be checked before
+processing the Jester subset or custom webcam recordings.
 """
 
 import argparse
 import os
 import numpy as np
-import cv2
-import mediapipe as mp
 
 N_LANDMARKS = 21
 N_COORDS = 3  # x, y, z
@@ -54,6 +49,8 @@ def extract_landmarks_from_video(video_path, max_frames=60, min_detection_confid
     valid detection (or zeros if no hand has been seen yet), so that
     every clip yields a fixed-rate sequence rather than ragged output.
     """
+    import cv2
+    import mediapipe as mp
     mp_hands = mp.solutions.hands
     cap = cv2.VideoCapture(video_path)
     frames = []

@@ -1,0 +1,17 @@
+{
+  "dataset": "20BN-Jester v1",
+  "seed": 42,
+  "train_pool_per_class": 500,
+  "test_per_class": 100,
+  "validation_fraction": 0.2,
+  "source_fps": 12,
+  "target_frames": 30,
+  "min_detection_rate": 0.5,
+  "classes": {
+    "rolling": ["Rolling Hand Forward", "Rolling Hand Backward"],
+    "shaking": ["Shaking Hand"],
+    "tapping": ["Drumming Fingers"],
+    "swiping": ["Swiping Left", "Swiping Right"],
+    "background": ["No gesture", "Doing other things"]
+  }
+}

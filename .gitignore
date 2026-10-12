@@ -2,3 +2,8 @@ node_modules/
 data/
 __pycache__/
 *.pyc
+.venv/
+results/smoke_check/
+.DS_Store
+results/*.log
+runs/

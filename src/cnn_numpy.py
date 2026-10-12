@@ -1,16 +1,11 @@
 """
 cnn_numpy.py — minimal from-scratch 2D CNN (NumPy only).
 
-The sandboxed training environment for this interim submission has no
-network access to install PyTorch/TensorFlow (both pip installs timed
-out / were blocked by the proxy), so the CNN owned by Tanvi Gupta is
-implemented here as a small hand-rolled 2D CNN with manual forward and
-backward passes (im2col convolution), trained by plain SGD with
-momentum. Functionally it is a real, from-scratch CNN — not a stub —
-but the team should re-implement/port this to PyTorch (as originally
-adapted from the Gesture-Symphony reference architecture) once a
-training environment with GPU/framework access is available, per the
-Risk/Plan section of the interim report.
+The interim baseline used NumPy because a deep-learning framework was not
+available then. It uses manual forward/backward passes and plain SGD (no
+momentum). Batch-mean gradients have since been corrected and numerically
+verified; training restores the epoch with the lowest validation loss.
+This is a custom architecture, not an adaptation of Gesture-Symphony.
 
 Architecture (per clip, input = 21x3 hand-pose "image", 2 channels: mean + std over time):
     Conv(2->8, 3x3, pad=1) -> ReLU
@@ -57,8 +52,9 @@ class Conv2D:
         dOut_flat = dOut.reshape(N, out_c, -1)
         Wf = self.W.reshape(out_c, -1)
 
-        dWf = np.einsum("nop,ncp->oc", dOut_flat, cols) / N
-        db = dOut_flat.sum(axis=(0, 2)) / N
+        # The loss derivative already contains the batch mean factor.
+        dWf = np.einsum("nop,ncp->oc", dOut_flat, cols)
+        db = dOut_flat.sum(axis=(0, 2))
         dcols = np.einsum("oc,nop->ncp", Wf, dOut_flat)
 
         dXp = np.zeros((N, C, H + 2 * self.pad, W + 2 * self.pad), dtype=X.dtype)
@@ -87,8 +83,8 @@ class Dense:
     def backward(self, dOut, lr):
         X = self.cache
         N = X.shape[0]
-        dW = X.T @ dOut / N
-        db = dOut.sum(axis=0) / N
+        dW = X.T @ dOut
+        db = dOut.sum(axis=0)
         dX = dOut @ self.W.T
         self.W -= lr * dW
         self.b -= lr * db
@@ -152,9 +148,22 @@ class SimpleCNN:
             preds.append(logits.argmax(axis=1))
         return np.concatenate(preds)
 
-    def fit(self, X, y_idx, X_val=None, y_val_idx=None, epochs=40, lr=0.05, batch=16, verbose=True):
+    def state_dict(self):
+        return {f"{name}.{parameter}": getattr(getattr(self, name), parameter).copy()
+                for name in ("conv1", "conv2", "fc1", "fc2") for parameter in ("W", "b")}
+
+    def load_state_dict(self, state):
+        for name in ("conv1", "conv2", "fc1", "fc2"):
+            for parameter in ("W", "b"):
+                value = state[f"{name}.{parameter}"]
+                if value.shape != getattr(getattr(self, name), parameter).shape:
+                    raise ValueError("Incompatible CNN checkpoint shape")
+                setattr(getattr(self, name), parameter, value.copy())
+
+    def fit(self, X, y_idx, X_val=None, y_val_idx=None, epochs=40, lr=0.05, batch=16, verbose=True, patience=10):
         n = X.shape[0]
         history = []
+        best_loss, best_state, stale = float("inf"), None, 0
         for ep in range(epochs):
             perm = np.random.default_rng(ep).permutation(n)
             Xs, ys = X[perm], y_idx[perm]
@@ -167,10 +176,25 @@ class SimpleCNN:
                 ep_loss += loss * len(xb)
             ep_loss /= n
             val_acc = None
+            val_loss = None
             if X_val is not None:
-                val_pred = self.predict(X_val)
+                val_logits = self.forward(X_val)
+                val_loss, _, _ = softmax_ce_loss(val_logits, y_val_idx)
+                val_pred = val_logits.argmax(axis=1)
                 val_acc = (val_pred == y_val_idx).mean()
-            history.append({"epoch": ep, "loss": float(ep_loss), "val_acc": float(val_acc) if val_acc is not None else None})
+                if not np.isfinite(val_loss):
+                    raise ValueError("CNN validation loss became non-finite")
+                if val_loss < best_loss:
+                    best_loss, best_state, stale = val_loss, self.state_dict(), 0
+                    self.best_epoch = ep + 1
+                else:
+                    stale += 1
+            history.append({"epoch": ep, "loss": float(ep_loss), "val_acc": float(val_acc) if val_acc is not None else None,
+                            "val_loss": float(val_loss) if val_loss is not None else None})
             if verbose and (ep % 5 == 0 or ep == epochs - 1):
                 print(f"epoch {ep:3d}  loss={ep_loss:.4f}  val_acc={val_acc}")
+            if stale >= patience:
+                break
+        if best_state is not None:
+            self.load_state_dict(best_state)
         return history
