@@ -69,6 +69,9 @@ Handoff from a claude.ai session to Claude Code. Read this first.
   account and Git identity. Verify relevant checks before pushing. Do not invent
   contributions or change authorship to other team members. Keep raw datasets,
   virtual environments, and generated model checkpoints out of normal Git commits.
+- User clarified on 13 October 2026: all development commits and pushes belong
+  on `codex/sangini`, never on `main`. Keep this branch checked out for continued
+  project work. Do not merge into or push `main` without a new explicit request.
 - Never fabricate results, citations or contributions. Do not write other members' contribution text for them; leave placeholders. Each member will be vivaed on their own part.
 - Keep one shared split and metric set across all models.
 - Report style: Times New Roman, black and white.
