@@ -9,11 +9,50 @@ Pipeline: MediaPipe landmarks -> normalise -> (30, 63) sequences -> MLP / CNN / 
 - Implemented: MLP, NumPy 2D CNN, PyTorch 1D-CNN and GRU, Jester subset selection, frame-folder preprocessing,
   shared split loading, detection-quality logging, and regression checks.
 - Real-data preprocessing and the first four-model comparison are complete.
-- To do: real-time app, live testing, final error analysis/report, and a documented
+- Local camera-to-sound app implemented with the selected 1D-CNN.
+- To do: live webcam/audio testing, final error analysis/report, and a documented
   decision on the interim report's proposed CNN framework/architecture changes.
 - The interim files `results/mlp_metrics.json` and `results/cnn_metrics.json`
   contain **synthetic** checks. Real results are separately identified below.
 - `src/preprocess.py` has not yet been run on real videos. Test it on a few clips first; it uses the legacy `mp.solutions.hands` API, which newer MediaPipe versions may not include.
+
+## Run the camera-to-sound app
+
+From the project folder, with the downloaded landmark model and trained checkpoint available:
+
+```bash
+source .venv/bin/activate
+pip install -r requirements-app.txt
+python src/app.py
+```
+
+Open http://localhost:8765 in your browser, press **Start exploring**, and allow
+camera access. Keep one whole hand visible and repeat a gesture for about three
+seconds. Use the volume slider or mute; **End session** releases the camera.
+Switching away from the tab also stops the session. Stop the server with Ctrl+C.
+On this Mac, MediaPipe requires normal desktop graphics access.
+
+A fresh clone does not include `data/models/hand_landmarker.task` or
+`runs/jester_v1/1dcnn/model.pt`. Complete the data/preprocessing/training setup
+below first; model files and datasets are intentionally excluded from Git.
+
+The browser sends JPEG frames only to the local Python server. Frames are not
+saved. The server extracts landmarks and applies the same motion features used
+for training. A rolling 36-frame window at a target 12 fps is resampled to 30
+frames. Three consecutive predictions scoring at least 0.75 activate a tone;
+background, uncertainty, and missing hands silence it. These provisional
+thresholds need live validation. The browser synthesizes four soft sine tones;
+these are not clinically validated calming sounds.
+
+Automated checks cover feature parity, prediction stability, tracking loss,
+hand changes, and timestamp gaps. Saved-clip replay checks server integration;
+it is not a webcam accuracy evaluation. Initial replay of clips 340 and 887
+repeatedly reset the window before classification. Repeating one visible-hand
+frame 48 times reached inference, but incorrectly activated shaking (a stationary
+hand false positive). Motion rejection and tracking tolerance need improvement
+before this can be described as reliable. Browser audio remains unverified.
+Processing time shown in the interface
+excludes the movement collection window, browser transport, and audio playback.
 
 ## First real-data experiment (7 October 2026)
 

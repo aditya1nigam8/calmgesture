@@ -22,8 +22,10 @@ Handoff from a claude.ai session to Claude Code. Read this first.
 - `results/jester_comparison.json` and `results/jester_data_quality.json` retain
   the comparison and data-quality evidence. Swiping has substantial tracking
   failure; do not claim robust webcam operation yet.
-- Next: integrate selected `runs/jester_v1/1dcnn/model.pt` into a live app,
-  validate training/live preprocessing consistency, measure full-loop latency,
+- Local app added: `python src/app.py`, http://localhost:8765. Selected 1D-CNN,
+  shared training features, 36-frame window, stable prediction gate, Web Audio tones.
+  Camera starts only on user action. Automated feature parity/state tests pass.
+- Next: validate actual webcam/audio behavior and measure full-loop latency,
   complete error analysis/final documentation. Preserve the project's non-clinical
   scope and never fabricate member contributions. The interim CNN-port promise
   still needs an explicit implementation or documented scope decision.
