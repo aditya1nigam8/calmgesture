@@ -25,6 +25,13 @@ Real data (`data/raw_videos/<class>/*.mp4` -> `data/processed/<class>/*.npy`):
 python src/preprocess.py --input_dir data/raw_videos --output_dir data/processed
 python src/train_mlp.py --data_dir data/processed --output_json results/mlp_real_metrics.json
 python src/train_cnn.py --data_dir data/processed --output_json results/cnn_real_metrics.json
+python src/cnn_channel_ablation.py --data_dir data/processed --output_json results/cnn_channel_ablation_real.json --seeds 0 1 2
+```
+
+NumPy CNN checks (finite-difference gradients, checkpoint round-trip):
+
+```
+python -m pytest tests     # or: python tests/test_cnn_gradients.py
 ```
 
 Pipeline check only (synthetic landmarks, not real gesture data; writes to `data/processed_synthetic` and `results/`):
@@ -42,7 +49,9 @@ python src/train_cnn.py
 | `src/preprocess.py` | Video -> MediaPipe landmarks -> wrist-relative, scale-normalised (30, 63) `.npy` |
 | `src/utils.py` | Loading, MLP features, stratified 70/10/20 split (seed 42), metrics |
 | `src/train_mlp.py` | MLP (sklearn) |
-| `src/cnn_numpy.py`, `src/train_cnn.py` | From-scratch NumPy 2D CNN |
+| `src/cnn_numpy.py`, `src/train_cnn.py` | From-scratch NumPy 2D CNN (train-only normalisation, early stopping on val loss, `.npz` checkpoint in `models/`) |
+| `src/cnn_channel_ablation.py` | CNN input-channel ablation: mean vs std vs mean+std, LR chosen on validation only |
+| `tests/test_cnn_gradients.py` | Finite-difference gradient checks for the NumPy CNN |
 | `src/synth_smoketest_data.py` | Synthetic clips for pipeline checks only |
 | `results/` | Metrics JSON |
 | `build_report.js` | Generates the interim report `.docx` (`npm install docx`) |
