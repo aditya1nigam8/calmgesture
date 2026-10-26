@@ -10,8 +10,11 @@ Pipeline: MediaPipe landmarks -> normalise -> (30, 63) sequences -> MLP / CNN / 
   shared split loading, detection-quality logging, and regression checks.
 - Real-data preprocessing and the first four-model comparison are complete.
 - Local camera-to-sound app implemented with the selected 1D-CNN.
-- To do: live webcam/audio testing, final error analysis/report, and a documented
-  decision on the interim report's proposed CNN framework/architecture changes.
+- PyTorch port of the spatial CNN (the interim report's proposed framework port)
+  implemented and checked against the NumPy model; not yet run on real data.
+  The proposed Gesture-Symphony architecture adaptation is not implemented.
+- To do: live webcam/audio testing, final error analysis/report, and real-data
+  runs of the CNN port and its input-channel ablation.
 - The interim files `results/mlp_metrics.json` and `results/cnn_metrics.json`
   contain **synthetic** checks. Real results are separately identified below.
 - `src/preprocess.py` has not yet been run on real videos. Test it on a few clips first; it uses the legacy `mp.solutions.hands` API, which newer MediaPipe versions may not include.
@@ -239,6 +242,32 @@ interim NumPy CNN's batch-throughput estimate. Current runs use batch-size-one
 CPU measurements with warmup for all four models, including their respective
 feature aggregation/normalization and probability output.
 
+## Spatial CNN PyTorch port
+
+`src/spatial_cnn_torch.py` reimplements the NumPy spatial CNN in PyTorch with
+the same layers and pose-image input; `src/train_cnn_torch.py` trains it with
+the NumPy baseline's settings (seeded He initialization copied from the NumPy
+model, plain SGD at learning rate 0.05, batch 16, the same per-epoch shuffling,
+training-only channel standardization, and minimum-validation-loss early
+stopping, patience 10). Only the framework changes. Tests check that NumPy
+weights give the same logits and probabilities in the port, and that a few
+epochs of training produce the same weights and selected epoch as the NumPy model.
+
+```bash
+python src/train_cnn_torch.py --data_dir data/processed_jester --output_dir runs/jester_cnn_torch
+# Input-channel ablation: mean pose only, everything else unchanged.
+python src/train_cnn_torch.py --data_dir data/processed_jester --output_dir runs/jester_cnn_torch_mean --channels mean
+# Convert the reported NumPy checkpoint and confirm identical held-out predictions.
+python src/spatial_cnn_torch.py --from_numpy runs/jester_v1/cnn/metrics.joblib \
+    --output runs/jester_v1/cnn/model.pt --data_dir data/processed_jester
+```
+
+None of these has been run on the real Jester subset yet, so there are no port
+or ablation results. Floating-point differences can accumulate over a full run,
+so a retrained port may not exactly match the reported NumPy CNN figures;
+the converted checkpoint is the like-for-like comparison. The port is not part
+of `train_all.py`'s four-model comparison, and Gesture-Symphony was not used.
+
 These implementations support the model assignments in the synopsis; they do
 not constitute evidence of individual member contributions. Team members should
 review and understand their assigned models before recording contribution claims.
@@ -308,6 +337,7 @@ in the final report.
 | `src/utils.py` | Loading, MLP features, stratified 70/10/20 split (seed 42), metrics |
 | `src/train_mlp.py` | MLP (sklearn) |
 | `src/cnn_numpy.py`, `src/train_cnn.py` | From-scratch NumPy 2D CNN |
+| `src/spatial_cnn_torch.py`, `src/train_cnn_torch.py` | PyTorch port of the spatial CNN, checkpoint conversion, channel ablation |
 | `src/temporal_models.py`, `src/train_temporal.py` | PyTorch 1D-CNN/GRU, checkpoint export and evaluation |
 | `src/baseline_inference.py`, `src/train_all.py` | Baseline model loading and sequential four-model comparison |
 | `src/synth_smoketest_data.py` | Synthetic clips for pipeline checks only |
