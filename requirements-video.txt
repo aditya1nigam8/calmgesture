@@ -1,0 +1,3 @@
+-r requirements.txt
+# 1.0.1 crashed in the native macOS hand-landmarker graph on this machine.
+mediapipe==0.10.32

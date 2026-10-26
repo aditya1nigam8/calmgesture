@@ -2,6 +2,36 @@
 
 Handoff from a claude.ai session to Claude Code. Read this first.
 
+## Current status — 7 October 2026 (supersedes historical status below)
+
+- User changed scope to Jester only: no custom gesture recordings.
+- Selected rolling, shaking, tapping, swiping, and background via
+  `config/jester_subset.json`. All 3,000 clips / 107,026 frames are downloaded.
+- `preprocess_jester.py` uses the Tasks API, pinned MediaPipe 0.10.32. On this
+  Mac it needs normal graphics access outside the sandbox. Version 1.0.1 crashed.
+- Motion-preserving features retain wrist XY travel, unlike the legacy video
+  preprocessor. Full preprocessing completed: 1,292 training clips after quality
+  filtering; all 500 validation and 500 held-out clips retained.
+- MLP, NumPy CNN, 1D-CNN, and GRU are implemented and trained on real data.
+  All use the same declared dataset splits. Baselines and temporal models now
+  save reloadable artifacts. MLP early stopping uses shared validation;
+  the CNN gradient double-averaging bug was corrected and tested numerically.
+- `runs/jester_v1/comparison.json` selects 1D-CNN by validation macro-F1.
+  Held-out accuracy: MLP 76.6%, CNN 74.0%, 1D-CNN 79.8%, GRU 76.0%.
+  These are five-class subset results, not the full Jester benchmark.
+- `results/jester_comparison.json` and `results/jester_data_quality.json` retain
+  the comparison and data-quality evidence. Swiping has substantial tracking
+  failure; do not claim robust webcam operation yet.
+- Local app added: `python src/app.py`, http://localhost:8765. Selected 1D-CNN,
+  shared training features, 36-frame window, stable prediction gate, Web Audio tones.
+  Camera starts only on user action. Automated feature parity/state tests pass.
+- Next: validate actual webcam/audio behavior and measure full-loop latency,
+  complete error analysis/final documentation. Preserve the project's non-clinical
+  scope and never fabricate member contributions. The interim CNN-port promise
+  still needs an explicit implementation or documented scope decision.
+- The official label ZIP now includes test-answers.csv, despite the website's
+  unlabeled-test wording; our experiment instead holds out official validation.
+
 ## What this is
 - Course: ICT 4442 (Deep Learning), School of Computer Engineering, MIT Manipal.
 - Project: **CalmGesture: A Gesture-to-Sound Sensory Regulation Tool for Autism Support Using Deep Learning.** Webcam hand gestures -> MediaPipe landmarks -> classifier -> predefined calming sounds. Exploratory, non-clinical prototype; never claim diagnosis or therapeutic effect.
@@ -36,6 +66,14 @@ Handoff from a claude.ai session to Claude Code. Read this first.
 6. Set up the GitHub repo with real per-member commits (the interim report requires the link and commit history). Replace the placeholders in the report: repo URL, team number, each member's own "Tasks completed", signatures.
 
 ## Ground rules
+- User requested on 12 October 2026: commit and push completed development
+  milestones to the configured GitHub repository using the existing authenticated
+  account and Git identity. Verify relevant checks before pushing. Do not invent
+  contributions or change authorship to other team members. Keep raw datasets,
+  virtual environments, and generated model checkpoints out of normal Git commits.
+- User clarified on 13 October 2026: all development commits and pushes belong
+  on `codex/sangini`, never on `main`. Keep this branch checked out for continued
+  project work. Do not merge into or push `main` without a new explicit request.
 - Never fabricate results, citations or contributions. Do not write other members' contribution text for them; leave placeholders. Each member will be vivaed on their own part.
 - Keep one shared split and metric set across all models.
 - Report style: Times New Roman, black and white.

@@ -1,0 +1,3 @@
+# Baseline model training. Video dependencies will be added after validation.
+numpy
+scikit-learn

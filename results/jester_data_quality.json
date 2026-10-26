@@ -1,0 +1,98 @@
+{
+  "train": {
+    "background": {
+      "selected": 400,
+      "retained": 400,
+      "zero_detection": 222,
+      "below_50_percent_detection": 291
+    },
+    "rolling": {
+      "selected": 400,
+      "retained": 188,
+      "zero_detection": 39,
+      "below_50_percent_detection": 212
+    },
+    "shaking": {
+      "selected": 400,
+      "retained": 308,
+      "zero_detection": 17,
+      "below_50_percent_detection": 92
+    },
+    "swiping": {
+      "selected": 400,
+      "retained": 96,
+      "zero_detection": 70,
+      "below_50_percent_detection": 304
+    },
+    "tapping": {
+      "selected": 400,
+      "retained": 300,
+      "zero_detection": 20,
+      "below_50_percent_detection": 100
+    }
+  },
+  "validation": {
+    "background": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 54,
+      "below_50_percent_detection": 72
+    },
+    "rolling": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 10,
+      "below_50_percent_detection": 54
+    },
+    "shaking": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 6,
+      "below_50_percent_detection": 25
+    },
+    "swiping": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 14,
+      "below_50_percent_detection": 80
+    },
+    "tapping": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 9,
+      "below_50_percent_detection": 24
+    }
+  },
+  "test": {
+    "background": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 52,
+      "below_50_percent_detection": 70
+    },
+    "rolling": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 10,
+      "below_50_percent_detection": 47
+    },
+    "shaking": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 3,
+      "below_50_percent_detection": 22
+    },
+    "swiping": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 15,
+      "below_50_percent_detection": 81
+    },
+    "tapping": {
+      "selected": 100,
+      "retained": 100,
+      "zero_detection": 4,
+      "below_50_percent_detection": 26
+    }
+  }
+}

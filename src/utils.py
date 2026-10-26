@@ -1,6 +1,9 @@
 """utils.py — shared loading, feature engineering, split and metrics helpers."""
 
 import os
+import json
+import hashlib
+from pathlib import Path
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
@@ -28,6 +31,57 @@ def load_dataset(processed_dir):
                 continue
             y.append(label)
     return np.stack(X, axis=0), np.array(y), classes
+
+
+def load_training_splits(processed_dir):
+    """Use declared Jester splits, or the historical split for synthetic data."""
+    root = Path(processed_dir)
+    metadata_path = root / "dataset.json"
+    if not metadata_path.exists():
+        X, y, classes = load_dataset(processed_dir)
+        return (*split_dataset(X, y), classes)
+    metadata = json.loads(metadata_path.read_text())
+    if metadata.get("status") != "complete":
+        raise ValueError("Jester preprocessing is incomplete; inspect dataset.json and quality.jsonl")
+    classes = metadata["classes"]
+    parts = {split: ([], []) for split in ("train", "validation", "test")}
+    seen = set()
+    for record in metadata["clips"]:
+        if record["clip_id"] in seen:
+            raise ValueError("Duplicate clip across dataset splits")
+        seen.add(record["clip_id"])
+        split = record["split"]
+        expected_source = "validation" if split == "test" else "train"
+        if record["source_split"] != expected_source:
+            raise ValueError("Official split membership changed")
+        path = (root / record["path"]).resolve()
+        if not path.is_relative_to(root.resolve()):
+            raise ValueError("Clip path is outside dataset directory")
+        clip = np.load(path, allow_pickle=False)
+        if clip.shape != (metadata["target_frames"], 63) or not np.isfinite(clip).all():
+            raise ValueError(f"Invalid landmark array: {path}")
+        parts[split][0].append(clip)
+        parts[split][1].append(record["label"])
+    for split, (_, labels) in parts.items():
+        if set(labels) != set(classes):
+            raise ValueError(f"Missing or unexpected classes in {split}")
+    arrays = [np.stack(parts[s][0]) for s in parts]
+    labels = [np.array(parts[s][1]) for s in parts]
+    return (*arrays, *labels, classes)
+
+
+def dataset_provenance(processed_dir):
+    """Keep real and synthetic experiments explicitly distinguishable."""
+    root = Path(processed_dir)
+    metadata = root / "dataset.json"
+    if metadata.exists():
+        info = json.loads(metadata.read_text())
+        return {"dataset": info["dataset"], "feature_version": info["feature_version"],
+                "manifest_sha256": info["manifest_sha256"],
+                "preprocessing_sha256": hashlib.sha256(metadata.read_bytes()).hexdigest(),
+                "split_protocol": "official train -> train/validation; official validation -> held-out test"}
+    return {"dataset": "synthetic pipeline check" if root.name == "processed_synthetic" else "unverified legacy dataset",
+            "split_protocol": "clip-stratified random split; seed=42"}
 
 
 def mlp_features(X):

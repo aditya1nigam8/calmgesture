@@ -1,0 +1,135 @@
+{
+  "note": "Small feasibility check on currently available frames; not recognition accuracy or full-dataset validation.",
+  "clips": [
+    {
+      "clip_id": "11793",
+      "label": "background",
+      "source_label": "No gesture",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 37,
+      "detection_rate": 0.0,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "13192",
+      "label": "background",
+      "source_label": "Doing other things",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 37,
+      "detection_rate": 0.5135135135135135,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "1983",
+      "label": "rolling",
+      "source_label": "Rolling Hand Backward",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 37,
+      "detection_rate": 0.8378378378378378,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "17734",
+      "label": "rolling",
+      "source_label": "Rolling Hand Forward",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 37,
+      "detection_rate": 0.7837837837837838,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "4649",
+      "label": "shaking",
+      "source_label": "Shaking Hand",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 32,
+      "detection_rate": 0.84375,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "5250",
+      "label": "shaking",
+      "source_label": "Shaking Hand",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 37,
+      "detection_rate": 0.21621621621621623,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "11987",
+      "label": "swiping",
+      "source_label": "Swiping Right",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 31,
+      "detection_rate": 0.25806451612903225,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "31599",
+      "label": "swiping",
+      "source_label": "Swiping Right",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 37,
+      "detection_rate": 0.4864864864864865,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "35",
+      "label": "tapping",
+      "source_label": "Drumming Fingers",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 36,
+      "detection_rate": 0.7222222222222222,
+      "shape": [
+        30,
+        63
+      ]
+    },
+    {
+      "clip_id": "4762",
+      "label": "tapping",
+      "source_label": "Drumming Fingers",
+      "source_split": "validation",
+      "split": "test",
+      "frames": 35,
+      "detection_rate": 0.5714285714285714,
+      "shape": [
+        30,
+        63
+      ]
+    }
+  ]
+}

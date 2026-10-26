@@ -1,0 +1,92 @@
+{
+  "data": {
+    "dataset": "20BN-Jester v1",
+    "feature_version": "first_wrist_xy_median_scale_v1",
+    "manifest_sha256": "1572352f7cea1c090dea915c74267f3b1190278f7e6ae99c3d74de3026b4b29a",
+    "preprocessing_sha256": "eca2ec8f13b0894362cbd92aa9ef75204ba7f44521f19531db7ab9ca968fc069",
+    "split_protocol": "official train -> train/validation; official validation -> held-out test"
+  },
+  "classes": [
+    "background",
+    "rolling",
+    "shaking",
+    "swiping",
+    "tapping"
+  ],
+  "selection_rule": "Highest validation macro-F1, then validation accuracy. Test metrics do not determine selection.",
+  "selected_model": "1D-CNN",
+  "models": [
+    {
+      "model": "MLP",
+      "validation_accuracy": 0.746,
+      "validation_macro_f1": 0.75204827933798,
+      "test_accuracy": 0.766,
+      "test_macro_f1": 0.768042814227558,
+      "latency": {
+        "device": "cpu",
+        "threads": 4,
+        "batch_size": 1,
+        "warmup": 10,
+        "repeats": 100,
+        "median_ms": 0.11424999684095383,
+        "p95_ms": 0.11900625395355746,
+        "scope": "feature aggregation/normalization + classifier + probabilities; excludes camera, landmarks, window collection and sound"
+      }
+    },
+    {
+      "model": "CNN (from-scratch NumPy, spatial)",
+      "validation_accuracy": 0.752,
+      "validation_macro_f1": 0.7596653724699396,
+      "test_accuracy": 0.74,
+      "test_macro_f1": 0.7459609819574544,
+      "latency": {
+        "device": "cpu",
+        "threads": 4,
+        "batch_size": 1,
+        "warmup": 10,
+        "repeats": 100,
+        "median_ms": 0.10587499127723277,
+        "p95_ms": 0.12625355011550704,
+        "scope": "feature aggregation/normalization + classifier + probabilities; excludes camera, landmarks, window collection and sound"
+      }
+    },
+    {
+      "model": "1D-CNN",
+      "validation_accuracy": 0.77,
+      "validation_macro_f1": 0.7698224291649493,
+      "test_accuracy": 0.798,
+      "test_macro_f1": 0.7991803053799897,
+      "latency": {
+        "device": "cpu",
+        "threads": 4,
+        "batch_size": 1,
+        "warmup": 10,
+        "repeats": 100,
+        "median_ms": 0.11118750262539834,
+        "p95_ms": 0.11971910571446642,
+        "scope": "feature normalization + classifier + softmax; excludes camera, landmarks, window collection and sound"
+      }
+    },
+    {
+      "model": "GRU",
+      "validation_accuracy": 0.726,
+      "validation_macro_f1": 0.7267237837497877,
+      "test_accuracy": 0.76,
+      "test_macro_f1": 0.7584470367292694,
+      "latency": {
+        "device": "cpu",
+        "threads": 4,
+        "batch_size": 1,
+        "warmup": 10,
+        "repeats": 100,
+        "median_ms": 0.24312450841534883,
+        "p95_ms": 0.2502604358596727,
+        "scope": "feature normalization + classifier + softmax; excludes camera, landmarks, window collection and sound"
+      }
+    }
+  ],
+  "n_train": 1292,
+  "n_validation": 500,
+  "n_test": 500,
+  "checkpoint_verification": "All four saved models reproduced reported held-out metrics."
+}
