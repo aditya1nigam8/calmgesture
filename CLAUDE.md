@@ -27,8 +27,11 @@ Handoff from a claude.ai session to Claude Code. Read this first.
   Camera starts only on user action. Automated feature parity/state tests pass.
 - Next: validate actual webcam/audio behavior and measure full-loop latency,
   complete error analysis/final documentation. Preserve the project's non-clinical
-  scope and never fabricate member contributions. The interim CNN-port promise
-  still needs an explicit implementation or documented scope decision.
+  scope and never fabricate member contributions.
+- 26 Oct 2026, branch `tanvi/cnn-pytorch-port` (Tanvi): PyTorch port of the
+  spatial CNN (`src/spatial_cnn_torch.py`, `src/train_cnn_torch.py`) with
+  NumPy-parity tests and a `--channels mean` input ablation. Not yet run on real
+  data; no Gesture-Symphony adaptation. Do not report port results until run.
 - The official label ZIP now includes test-answers.csv, despite the website's
   unlabeled-test wording; our experiment instead holds out official validation.
 
