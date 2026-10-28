@@ -3,6 +3,7 @@ data/
 __pycache__/
 *.pyc
 .venv/
+.venv-gru/
 results/smoke_check/
 .DS_Store
 results/*.log

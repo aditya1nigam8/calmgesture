@@ -18,7 +18,8 @@ from temporal_models import create_model, fit_normalizer, load_checkpoint, predi
 from utils import dataset_provenance, evaluate, load_training_splits
 
 
-def train(architecture, data_dir, output_dir, epochs=50, batch_size=32, learning_rate=0.001, patience=10, seed=42):
+def train(architecture, data_dir, output_dir, epochs=50, batch_size=32, learning_rate=0.001, patience=10, seed=42,
+          model_config=None, evaluate_test=True):
     if epochs < 1 or batch_size < 1 or learning_rate <= 0 or patience < 1:
         raise ValueError("Training parameters must be positive")
     output_dir = Path(output_dir)
@@ -35,7 +36,7 @@ def train(architecture, data_dir, output_dir, epochs=50, batch_size=32, learning
     labels = [torch.tensor([label_map[label] for label in part], dtype=torch.long) for part in (ytr, yva, yte)]
     loader = DataLoader(TensorDataset(arrays[0], labels[0]), batch_size=batch_size,
                         shuffle=True, generator=torch.Generator().manual_seed(seed), num_workers=0)
-    model = create_model(architecture, len(classes))
+    model = create_model(architecture, len(classes), model_config)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     loss_function = nn.CrossEntropyLoss()
     history, best_weights = [], None
@@ -76,22 +77,23 @@ def train(architecture, data_dir, output_dir, epochs=50, batch_size=32, learning
         "classes": classes, "mean": torch.from_numpy(mean), "std": torch.from_numpy(std),
         "target_frames": int(Xtr.shape[1]), "data": provenance, "seed": seed,
         "best_epoch": best_epoch,
+        "model_config": model_config or {},
     }
     checkpoint_path = output_dir / "model.pt"
     torch.save(checkpoint, checkpoint_path)
     # Evaluate what will actually be deployed, after a save/load round trip.
     restored, checkpoint = load_checkpoint(checkpoint_path)
     val_probabilities = predict_probabilities(restored, checkpoint, Xva)
-    test_probabilities = predict_probabilities(restored, checkpoint, Xte)
+    test_probabilities = predict_probabilities(restored, checkpoint, Xte) if evaluate_test else None
     names = np.asarray(classes)
     val_pred = names[val_probabilities.argmax(1)]
-    test_pred = names[test_probabilities.argmax(1)]
+    test_pred = names[test_probabilities.argmax(1)] if evaluate_test else None
     # Batch-size-one CPU latency includes normalization + model + softmax only.
     for _ in range(10):
-        predict_probabilities(restored, checkpoint, Xte[:1])
+        predict_probabilities(restored, checkpoint, Xva[:1])
     timings = []
     for index in range(100):
-        sample = Xte[index % len(Xte):index % len(Xte) + 1]
+        sample = Xva[index % len(Xva):index % len(Xva) + 1]
         start = time.perf_counter()
         predict_probabilities(restored, checkpoint, sample)
         timings.append((time.perf_counter() - start) * 1000)
@@ -101,7 +103,9 @@ def train(architecture, data_dir, output_dir, epochs=50, batch_size=32, learning
         "data": provenance, "classes": classes, "n_train": len(Xtr), "n_val": len(Xva), "n_test": len(Xte),
         "train_time_s": train_time, "best_epoch": best_epoch,
         "parameters": sum(parameter.numel() for parameter in restored.parameters()),
-        "val": evaluate(yva, val_pred, classes), "test": evaluate(yte, test_pred, classes),
+        "model_config": model_config or {},
+        "val": evaluate(yva, val_pred, classes),
+        "test": evaluate(yte, test_pred, classes) if evaluate_test else None,
         "latency": {"device": "cpu", "threads": 4, "batch_size": 1, "warmup": 10, "repeats": 100,
                     "median_ms": float(np.median(timings)), "p95_ms": float(np.percentile(timings, 95)),
                     "scope": "feature normalization + classifier + softmax; excludes camera, landmarks, window collection and sound"},
@@ -110,9 +114,12 @@ def train(architecture, data_dir, output_dir, epochs=50, batch_size=32, learning
         "history": history,
     }
     (output_dir / "metrics.json").write_text(json.dumps(metrics, indent=2) + "\n")
-    np.savez_compressed(output_dir / "predictions.npz", y_true=yte, y_pred=test_pred,
-                        probabilities=test_probabilities, classes=names)
-    print(f"Saved checkpoint and metrics to {output_dir}; test accuracy={metrics['test']['accuracy']:.3f}")
+    np.savez_compressed(output_dir / "validation_predictions.npz", y_true=yva, y_pred=val_pred,
+                        probabilities=val_probabilities, classes=names)
+    if evaluate_test:
+        np.savez_compressed(output_dir / "predictions.npz", y_true=yte, y_pred=test_pred,
+                            probabilities=test_probabilities, classes=names)
+    print(f"Saved checkpoint and metrics to {output_dir}")
     return metrics
 
 
@@ -126,9 +133,16 @@ def main():
     parser.add_argument("--learning_rate", type=float, default=0.001)
     parser.add_argument("--patience", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--hidden_size", type=int, default=64, help="GRU hidden units")
+    parser.add_argument("--pooling", choices=["last", "mean"], default="last", help="GRU state readout")
+    parser.add_argument("--validation_only", action="store_true", help="Do not score the held-out test")
     args = parser.parse_args()
+    if args.model != "gru" and (args.hidden_size != 64 or args.pooling != "last"):
+        parser.error("--hidden_size and --pooling apply only to GRU")
+    config = {"hidden_size": args.hidden_size, "pooling": args.pooling} if args.model == "gru" else None
     train(args.model, args.data_dir, args.output_dir, args.epochs, args.batch_size,
-          args.learning_rate, args.patience, args.seed)
+          args.learning_rate, args.patience, args.seed, model_config=config,
+          evaluate_test=not args.validation_only)
 
 
 if __name__ == "__main__":
