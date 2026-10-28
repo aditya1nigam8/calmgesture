@@ -20,21 +20,28 @@ class TemporalCNN(nn.Module):
 
 
 class GestureGRU(nn.Module):
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, hidden_size=64, pooling="last", dropout=0.2):
         super().__init__()
-        self.gru = nn.GRU(input_size=63, hidden_size=64, batch_first=True)
-        self.classifier = nn.Sequential(nn.Dropout(0.2), nn.Linear(64, n_classes))
+        if hidden_size < 1 or pooling not in {"last", "mean"} or not 0 <= dropout < 1:
+            raise ValueError("Invalid GRU hidden size, pooling, or dropout")
+        self.pooling = pooling
+        self.gru = nn.GRU(input_size=63, hidden_size=hidden_size, batch_first=True)
+        self.classifier = nn.Sequential(nn.Dropout(dropout), nn.Linear(hidden_size, n_classes))
 
     def forward(self, sequence):
-        _, hidden = self.gru(sequence)
-        return self.classifier(hidden[-1])
+        outputs, hidden = self.gru(sequence)
+        representation = hidden[-1] if self.pooling == "last" else outputs.mean(dim=1)
+        return self.classifier(representation)
 
 
-def create_model(architecture, n_classes):
+def create_model(architecture, n_classes, model_config=None):
+    model_config = model_config or {}
     if architecture == "1dcnn":
+        if model_config:
+            raise ValueError("GRU configuration cannot be applied to 1D-CNN")
         return TemporalCNN(n_classes)
     if architecture == "gru":
-        return GestureGRU(n_classes)
+        return GestureGRU(n_classes, **model_config)
     raise ValueError(f"Unknown architecture: {architecture}")
 
 
@@ -47,7 +54,8 @@ def load_checkpoint(path):
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
     if checkpoint.get("format_version") != 1:
         raise ValueError("Unsupported checkpoint format")
-    model = create_model(checkpoint["architecture"], len(checkpoint["classes"]))
+    model = create_model(checkpoint["architecture"], len(checkpoint["classes"]),
+                         checkpoint.get("model_config"))
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
     return model, checkpoint

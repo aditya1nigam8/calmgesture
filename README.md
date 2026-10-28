@@ -84,6 +84,49 @@ latency; the complete live system has not yet been timed.
 
 ## Setup
 
+### GRU contribution experiments
+
+`src/gru_experiments.py` adds controlled experiments for the recurrent model:
+the existing final-hidden-state GRU, mean pooling across recurrent outputs,
+32 rather than 64 hidden units, a smaller learning rate (0.0003), and the
+existing 1D-CNN reference. Each ablation changes one setting from the baseline.
+All configurations use seeds 42, 43 and 44 and the same declared data splits.
+Mean pooling still processes ordered inputs through the GRU; it is not a
+mean of the input landmarks.
+
+After installing `requirements-training.txt` and restoring the processed
+Jester dataset, run from the project root:
+
+```bash
+python src/gru_experiments.py --data_dir data/processed_jester --output_dir runs/gru_ablation_v1
+python -m unittest discover -s tests -p "test_gru_experiments.py"
+```
+
+Use a fresh output directory for each experiment. `protocol.json` records the
+settings before training. Each run saves a reloadable checkpoint, loss history,
+validation predictions, confusion matrix and classifier-only latency.
+`selection.json` ranks configurations by mean validation macro-F1 across seeds,
+then mean validation accuracy. Checkpoints use minimum validation loss.
+Only the selected configuration is subsequently scored on the held-out test,
+for every seed; no best seed is selected. `selected_test.json` reports these
+results and mean/sample standard deviation. Seed variation is not a confidence
+interval over users or clips. The shared loader reads all splits, but candidate
+training and selection do not score the test split. The test has already been
+used in the original study, so this is not a new unseen benchmark.
+
+All candidate checkpoints also receive validation-only reversed-sequence and
+repeated-first-frame probes. Their prediction-change rates measure sensitivity;
+the transformed clips do not have established ground-truth gesture labels.
+They do not establish stationary-hand false-trigger rates or continuous-input
+accuracy. Such evaluation still requires labeled streams containing rest,
+transitions and tracking interruptions, with event counts and onset-to-sound
+timing. GRU state is reset for each window; stateful streaming is not implemented.
+
+Existing checkpoints without a model configuration retain their original
+64-unit/final-state behavior. No real-data ablation results are included yet:
+this checkout lacks processed data and trained checkpoints. Synthetic runs
+require `--allow_synthetic` and are pipeline checks only, not recognition evidence.
+
 Baseline training (from the project folder):
 
 ```bash
